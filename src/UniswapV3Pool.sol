@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import "solmate/tokens/ERC20.sol";
 import "./lib/Tick.sol";
 import "./lib/Position.sol";
+import "./interfaces/IUniswapV3MintCallback.sol";
 
 contract UniswapV3Pool {
     using Position for mapping(bytes32 => Position.Info);
@@ -29,6 +31,7 @@ contract UniswapV3Pool {
 
     error InvalidTickRange();
     error ZeroLiquidity();
+    error InsufficientAmount();
 
     constructor(
         address _token0,
@@ -71,5 +74,31 @@ contract UniswapV3Pool {
 
         liquidity += uint128(_amount);
 
+        uint256 balance0Before;
+        uint256 balance1Before;
+
+        if (amount0 > 0) balance0Before = balance0();
+        if (amount1 > 0) balance1Before = balance1();
+
+        IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
+            amount0,
+            amount1
+        );
+
+        if (amount0 > 0 && balance0Before + amount0 > balance0()) {
+            revert InsufficientAmount();
+        }
+
+        if (amount1 > 0 && balance1Before + amount1 > balance1()) {
+            revert InsufficientAmount();
+        }
+    }
+
+    function balance0() internal view returns (uint) {
+        return ERC20(token0).balanceOf(address(this));
+    }
+
+    function balance1() internal view returns (uint) {
+        return ERC20(token1).balanceOf(address(this));
     }
 }
