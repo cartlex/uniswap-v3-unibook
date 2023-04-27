@@ -44,6 +44,19 @@ contract UniswapV3PoolTest is Test {
         });
 
         (uint256 poolBalance0, uint256 poolBalance1) = setupTestCase(params);
+
+        uint expectedAmount0 = 0.998976618347425280 ether;
+        uint expectedAmount1 = 5000 ether;
+        assertEq(
+            poolBalance0,
+            expectedAmount0,
+            "incorrect token0 deposit amount"
+        );
+
+        assertEq(poolBalance1,
+            expectedAmount1,
+            "incorrect token1 deposit amount"
+        );
     }
 
     function setupTestCase(
@@ -62,6 +75,8 @@ contract UniswapV3PoolTest is Test {
             params.currentTick
         );
 
+        shouldTransferInCallback = params.shouldTransferInCallback;
+
         if (params.mintLiquidity) {
             (poolBalance0, poolBalance1) = pool.mint(
                 address(this),
@@ -70,15 +85,12 @@ contract UniswapV3PoolTest is Test {
                 params.liquidity
             );
         }
-
-        shouldTransferInCallback = params.shouldTransferInCallback;
     }
 
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1) public {
         if (shouldTransferInCallback) {
             token0.transfer(msg.sender, amount0);
             token1.transfer(msg.sender, amount1);
-
         }
     }
 }
