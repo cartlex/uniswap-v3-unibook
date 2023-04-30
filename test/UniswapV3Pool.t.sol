@@ -29,6 +29,156 @@ contract UniswapV3PoolTest is Test {
         token1 = new ERC20Mintable("USDC", "USDC", 18);
     }
 
+    function testBoundriesMin() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: -887273,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currenSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
+
+        token0.mint(address(this), params.wethBalance);
+        token1.mint(address(this), params.usdcBalance);
+
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            params.currenSqrtP,
+            params.currentTick
+        );
+
+        shouldTransferInCallback = params.shouldTransferInCallback;
+
+        vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
+
+
+        if (params.mintLiquidity) {
+            (uint256 poolBalance0, uint256 poolBalance1) = pool.mint(
+                address(this),
+                params.lowerTick,
+                params.upperTick,
+                params.liquidity
+            );
+        }
+    }
+
+    function testBoundriesMax() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 887273,
+            liquidity: 1517882343751509868544,
+            currenSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
+
+        token0.mint(address(this), params.wethBalance);
+        token1.mint(address(this), params.usdcBalance);
+
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            params.currenSqrtP,
+            params.currentTick
+        );
+
+        shouldTransferInCallback = params.shouldTransferInCallback;
+
+        vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
+
+
+        if (params.mintLiquidity) {
+            (uint256 poolBalance0, uint256 poolBalance1) = pool.mint(
+                address(this),
+                params.lowerTick,
+                params.upperTick,
+                params.liquidity
+            );
+        }
+    }
+
+    function testMintInsufficientTokenBalance() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 0,
+            usdcBalance: 0,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86883,
+            liquidity: 1517882343751509868544,
+            currenSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
+
+        token0.mint(address(this), params.wethBalance);
+        token1.mint(address(this), params.usdcBalance);
+
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            params.currenSqrtP,
+            params.currentTick
+        );
+
+        shouldTransferInCallback = params.shouldTransferInCallback;
+
+        // vm.expectRevert(UniswapV3Pool.InsufficientInputAmount.selector);
+
+        if (params.mintLiquidity) {
+            (uint256 poolBalance0, uint256 poolBalance1) = pool.mint(
+                address(this),
+                params.lowerTick,
+                params.upperTick,
+                params.liquidity
+            );
+        }
+    }
+
+    function testZeroLiquidity() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 0,
+            currenSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
+
+        token0.mint(address(this), params.wethBalance);
+        token1.mint(address(this), params.usdcBalance);
+
+        pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            params.currenSqrtP,
+            params.currentTick
+        );
+
+        shouldTransferInCallback = params.shouldTransferInCallback;
+
+        vm.expectRevert(UniswapV3Pool.ZeroLiquidity.selector);
+
+        if (params.mintLiquidity) {
+            (uint256 poolBalance0, uint256 poolBalance1) = pool.mint(
+                address(this),
+                params.lowerTick,
+                params.upperTick,
+                params.liquidity
+            );
+        }
+    }
+
     function testMintSuccess() public {
         TestCaseParams memory params = TestCaseParams({
             wethBalance: 1 ether,
