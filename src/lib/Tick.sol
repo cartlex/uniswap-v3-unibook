@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: MIT
+pragma solidity^0.8.14;
 
 library Tick {
     struct Info {
@@ -8,19 +8,18 @@ library Tick {
     }
 
     function update(
-        mapping(int24 => Info) storage self,
-        int24 _tick,
-        uint128 _liquidityDelta
+        mapping(int24 => Tick.Info) storage self,
+        int24 tick,
+        uint128 liquidityDelta
     ) internal {
-        Info storage tickInfo = self[_tick];
-        uint128 liquidtyBefore = tickInfo.liquidity;
-        uint128 liquidtyAfter = liquidtyBefore + _liquidityDelta;
+        Tick.Info storage tickInfo = self[tick];
+        uint128 liquidityBefore = tickInfo.liquidity;
+        uint128 liquidityAfter = liquidityBefore + liquidityDelta;
 
-        if(liquidtyBefore == 0) {
+        if (liquidityBefore == 0) {
             tickInfo.initialized = true;
         }
 
-        tickInfo.liquidity = liquidtyAfter;
+        tickInfo.liquidity = liquidityAfter;
     }
-
 }
