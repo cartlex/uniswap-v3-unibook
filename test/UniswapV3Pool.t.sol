@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity^0.8.14;
+pragma solidity ^0.8.14;
 
 import "forge-std/Test.sol";
 import "./ERC20Mintable.sol";
@@ -11,6 +11,7 @@ contract UniswapV3PoolTest is Test {
     UniswapV3Pool pool;
 
     bool shouldTransferInCallback;
+    bool testInput;
 
     struct TestCaseParams {
         uint256 wethBalance;
@@ -56,7 +57,6 @@ contract UniswapV3PoolTest is Test {
 
         vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
 
-
         if (params.mintLiquidity) {
             (uint256 poolBalance0, uint256 poolBalance1) = pool.mint(
                 address(this),
@@ -93,7 +93,6 @@ contract UniswapV3PoolTest is Test {
         shouldTransferInCallback = params.shouldTransferInCallback;
 
         vm.expectRevert(UniswapV3Pool.InvalidTickRange.selector);
-
 
         if (params.mintLiquidity) {
             (uint256 poolBalance0, uint256 poolBalance1) = pool.mint(
@@ -213,9 +212,7 @@ contract UniswapV3PoolTest is Test {
         assertEq(token1.balanceOf(address(pool)), expectedAmount1);
 
         bytes32 positionKey = keccak256(
-            abi.encodePacked(
-                address(this), params.lowerTick, params.upperTick
-            )
+            abi.encodePacked(address(this), params.lowerTick, params.upperTick)
         );
 
         uint128 posLiquidity = pool.positions(positionKey);
@@ -249,10 +246,7 @@ contract UniswapV3PoolTest is Test {
 
     function setupTestCase(
         TestCaseParams memory params
-        ) internal returns (
-            uint256 poolBalance0,
-            uint256 poolBalance1
-        ) {
+    ) internal returns (uint256 poolBalance0, uint256 poolBalance1) {
         token0.mint(address(this), params.wethBalance);
         token1.mint(address(this), params.usdcBalance);
 
@@ -294,9 +288,12 @@ contract UniswapV3PoolTest is Test {
             shouldTransferInCallback: true,
             mintLiquidity: true
         });
+
         (uint256 poolBalance0, uint256 poolBalance1) = setupTestCase(params);
 
         token1.mint(address(this), 42 ether);
+
+        int256 userBalance0Before = int256(token0.balanceOf(address(this)));
 
         (int256 amount0Delta, int256 amount1Delta) = pool.swap(address(this));
 
@@ -308,11 +305,23 @@ contract UniswapV3PoolTest is Test {
             uint256(userBalance0Before - amount0Delta),
             "invalid user ETH balance"
         );
-        
+
         assertEq(
             token1.balanceOf(address(this)),
             0,
             "invalid user USDC balance"
+        );
+
+        assertEq(
+            token0.balanceOf(address(pool)),
+            uint256(int256(poolBalance0) + amount0Delta),
+            "invalid pool ETH balance"
+        );
+
+        assertEq(
+            token1.balanceOf(address(pool)),
+            uint256(int256(poolBalance1) + amount1Delta),
+            "invalid pool USDC balance"
         );
 
         (uint160 sqrtPriceX96, int24 tick) = pool.slot0();
@@ -323,6 +332,7 @@ contract UniswapV3PoolTest is Test {
         );
 
         assertEq(tick, 85184, "invalid current tick");
+
         assertEq(
             pool.liquidity(),
             1517882343751509868544,
@@ -330,6 +340,31 @@ contract UniswapV3PoolTest is Test {
         );
     }
 
+    function testInputAmount() public {
+        testInput = true;
+
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currenSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
+
+        (uint256 poolBalance0, uint256 poolBalance1) = setupTestCase(params);
+
+        token1.mint(address(this), 42 ether);
+
+        vm.expectRevert(UniswapV3Pool.InsufficientInputAmount.selector);
+        (int256 amount0Delta, int256 amount1Delta) = pool.swap(address(this));
+
+        testInput = false;
+
+    }
 
     function uniswapV3SwapCallback(int256 amount0, int256 amount1) public {
         if (amount0 > 0) {
@@ -337,7 +372,11 @@ contract UniswapV3PoolTest is Test {
         }
 
         if (amount1 > 0) {
-            token1.transfer(msg.sender, uint256(amount1));
+            if(testInput) {
+                token1.transfer(msg.sender, uint256(amount1) - 1);
+            } else {
+                token1.transfer(msg.sender, uint256(amount1));
+            }
         }
     }
 }
