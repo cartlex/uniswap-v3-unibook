@@ -12,7 +12,7 @@ library Tick {
         uint128 liquidityBefore = tickInfo.liquidity;
         uint128 liquidityAfter = liquidityBefore + liquidityDelta;
 
-        if (liquidityAfter == 0) {
+        if (liquidityBefore == 0) {
             tickInfo.initialized = true;
         }
 

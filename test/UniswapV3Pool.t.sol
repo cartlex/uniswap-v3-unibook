@@ -48,15 +48,32 @@ contract UniswapV3PoolTest is Test {
         uint256 expectedAmount1 = 5000 ether;
 
         assertEq(poolBalance0, expectedAmount0);
-        // assertEq(poolBalance1, expectedAmount1);
+        assertEq(poolBalance1, expectedAmount1);
 
-        // assertEq(token0.balanceOf(address(uniswapV3Pool)), expectedAmount0);
-        // assertEq(token1.balanceOf(address(uniswapV3Pool)), expectedAmount1);
+        assertEq(token0.balanceOf(address(uniswapV3Pool)), expectedAmount0);
+        assertEq(token1.balanceOf(address(uniswapV3Pool)), expectedAmount1);
 
-        // bytes32 positionKey = keccak256(abi.encodePacked(address(this), params.lowerTick, params.upperTick));
+        bytes32 positionKey = keccak256(abi.encodePacked(address(this), params.lowerTick, params.upperTick));
 
-        // uint128 positionLiquidity = uniswapV3Pool.positions(positionKey);
-        // assertEq(positionKey, positionLiquidity);
+        uint128 positionLiquidity = uniswapV3Pool.positions(positionKey);
+        assertEq(positionLiquidity, params.liquidity);
+
+        (bool tickInitialized, uint128 tickLiquidity) = uniswapV3Pool.ticks(params.lowerTick);
+
+        assertTrue(tickInitialized);
+        assertEq(tickLiquidity, params.liquidity);
+
+        (tickInitialized, tickLiquidity) = uniswapV3Pool.ticks(params.upperTick);
+
+        assertTrue(tickInitialized);
+        assertEq(tickLiquidity, params.liquidity);
+
+        (uint160 sqrtPriceX96, int24 tick) = uniswapV3Pool.slot0();
+        assertEq(sqrtPriceX96, params.currentSqrtP);
+        assertEq(tick, params.currentTick);
+
+        uint128 poolLiqudity = uniswapV3Pool.liquidity();
+        assertEq(poolLiqudity, params.liquidity);
     }
 
     function setupTestCase(TestCaseParams memory params) internal returns (uint256, uint256) {
