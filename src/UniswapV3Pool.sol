@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
 import {Tick} from "./libraries/Tick.sol";
 import {Position} from "./libraries/Position.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
@@ -58,7 +59,7 @@ contract UniswapV3Pool {
 
         position.update(amount);
 
-        uint256 amount0 = 0.99897661834742528 ether;
+        uint256 amount0 = 0.998976618347425280 ether;
         uint256 amount1 = 5000 ether;
 
         liquidity = liquidity + amount;
@@ -71,13 +72,16 @@ contract UniswapV3Pool {
 
         IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
             amount0,
-            amount1
+            amount1,
+            ""
         );
 
         if (amount0 > 0 && balance0Before + amount0 > balance0()) revert ErrorsLib.InsufficientInputAmount();
         if (amount1 > 0 && balance1Before + amount1 > balance1()) revert ErrorsLib.InsufficientInputAmount();
-
+        
         emit EventsLib.Mint(msg.sender, owner, lowerTick, upperTick, amount, amount0, amount1);
+
+        return (amount0, amount1);
     }
 
     function balance0() internal view returns (uint256) {
