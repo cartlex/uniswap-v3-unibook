@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {Test} from "forge-std/Test.sol";
+import {console2, Test} from "forge-std/Test.sol";
 import {Token} from "./Mock/Token.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {UniswapV3Pool} from "../src/UniswapV3Pool.sol";
@@ -12,6 +12,7 @@ contract UniswapV3PoolTest is Test {
     Token public token1;
     UniswapV3Pool public uniswapV3Pool;
     bool public shouldTransferInCallback;
+    bool public testInput;
 
     struct TestCaseParams {
         uint256 wethBalance;
@@ -262,15 +263,43 @@ contract UniswapV3PoolTest is Test {
         assertEq(tick, 85184);
     }
 
+    function testInsufficientInputAmount() public {
+        testInput = true;
+
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            daiBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currentSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
+        (uint256 poolBalance0, uint256 poolBalance1) = setupTestCase(params);
+        console2.log("Balance of token0", token0.balanceOf(address(this)));
+        token1.mint(address(this), 42 ether);
+
+        int256 userBalance0Before = int256(token0.balanceOf(address(this)));
+
+        vm.expectRevert(ErrorsLib.InsufficientInputAmount.selector);
+        (int256 amount0Delta, int256 amount1Delta) = uniswapV3Pool.swap(address(this));
+
+        testInput = false;
+    }
+
     function uniswapV3SwapCallback(int256 amount0, int256 amount1, bytes calldata data) public {
         if (amount0 > 0) {
             token0.transfer(msg.sender, uint256(amount0));
         }
 
         if (amount1 > 0) {
-            token1.transfer(msg.sender, uint256(amount1));
+            if (testInput) {
+                token1.transfer(msg.sender, uint256(amount1) - 1 ether);
+            } else {
+                token1.transfer(msg.sender, uint256(amount1));
+            }
         }
     }
-
-    
 }

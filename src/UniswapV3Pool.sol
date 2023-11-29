@@ -98,7 +98,7 @@ contract UniswapV3Pool {
         uint256 balance1Before = balance1();
         IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, "");
 
-        if (balance1Before + uint256(amount1) < balance1()) revert ErrorsLib.InsufficientInputAmount();
+        if (balance1Before + uint256(amount1) > balance1()) revert ErrorsLib.InsufficientInputAmount();
 
         emit EventsLib.Swap(
             msg.sender,
