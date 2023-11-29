@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
+import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {Tick} from "./libraries/Tick.sol";
 import {Position} from "./libraries/Position.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
@@ -80,6 +81,34 @@ contract UniswapV3Pool {
         if (amount1 > 0 && balance1Before + amount1 > balance1()) revert ErrorsLib.InsufficientInputAmount();
         
         emit EventsLib.Mint(msg.sender, owner, lowerTick, upperTick, amount, amount0, amount1);
+
+        return (amount0, amount1);
+    }
+
+    function swap(address recipient) public returns (int256, int256) {
+        int24 nextTick = 85184;
+        uint160 nextPrice = 5604469350942327889444743441197;
+
+        int256 amount0 = -0.008396714242162444 ether;
+        int256 amount1 = 42 ether;
+
+        (slot0.tick, slot0.sqrtPriceX96) = (nextTick, nextPrice);
+        IERC20(token0).transfer(recipient, uint256(-amount0));
+
+        uint256 balance1Before = balance1();
+        IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, "");
+
+        if (balance1Before + uint256(amount1) < balance1()) revert ErrorsLib.InsufficientInputAmount();
+
+        emit EventsLib.Swap(
+            msg.sender,
+            recipient,
+            amount0,
+            amount1,
+            slot0.sqrtPriceX96,
+            liquidity,
+            slot0.tick
+        );
 
         return (amount0, amount1);
     }

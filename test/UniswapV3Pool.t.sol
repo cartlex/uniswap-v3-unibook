@@ -30,6 +30,34 @@ contract UniswapV3PoolTest is Test {
         token1 = new Token("DAI", "DAI");
     }
 
+    function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) public {
+        if (shouldTransferInCallback) {
+            IERC20(token0).transfer(msg.sender, amount0);
+            IERC20(token1).transfer(msg.sender, amount1);
+        }
+    }
+
+    function setupTestCase(TestCaseParams memory params) internal returns (uint256, uint256) {
+        token0.mint(address(this), params.wethBalance);
+        token1.mint(address(this), params.daiBalance);
+        
+        uniswapV3Pool = new UniswapV3Pool(
+            address(token0),
+            address(token1),
+            params.currentSqrtP,
+            params.currentTick
+        );
+
+        shouldTransferInCallback = params.shouldTransferInCallback;
+
+        if (params.mintLiquidity) {
+            (uint256 poolBalance0, uint256 poolBalance1) =
+                uniswapV3Pool.mint(address(this), params.lowerTick, params.upperTick, params.liquidity);
+
+            return (poolBalance0, poolBalance1);
+        }
+    }
+
     function testMintSuccess() public {
         TestCaseParams memory params = TestCaseParams({
             wethBalance: 1 ether,
@@ -198,31 +226,51 @@ contract UniswapV3PoolTest is Test {
         }
     }
 
-    function setupTestCase(TestCaseParams memory params) internal returns (uint256, uint256) {
-        token0.mint(address(this), params.wethBalance);
-        token1.mint(address(this), params.daiBalance);
-        
-        uniswapV3Pool = new UniswapV3Pool(
-            address(token0),
-            address(token1),
-            params.currentSqrtP,
-            params.currentTick
-        );
+    function testSwapBuyEth() public {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            daiBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currentSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiquidity: true
+        });
 
-        shouldTransferInCallback = params.shouldTransferInCallback;
+        (uint256 poolBalance0, uint256 poolBalance1) = setupTestCase(params);
 
-        if (params.mintLiquidity) {
-            (uint256 poolBalance0, uint256 poolBalance1) =
-                uniswapV3Pool.mint(address(this), params.lowerTick, params.upperTick, params.liquidity);
+        token1.mint(address(this), 42 ether);
 
-            return (poolBalance0, poolBalance1);
+        int256 userBalance0Before = int256(token0.balanceOf(address(this)));
+
+        (int256 amount0Delta, int256 amount1Delta) = uniswapV3Pool.swap(address(this));
+
+        assertEq(amount0Delta, -0.008396714242162444 ether);
+        assertEq(amount1Delta, 42 ether);
+
+        assertEq(token1.balanceOf(address(this)), 0);
+        assertEq(token0.balanceOf(address(this)), uint256(userBalance0Before - amount0Delta));
+
+        assertEq(token0.balanceOf(address(uniswapV3Pool)), uint256(int256(poolBalance0) + amount0Delta));
+        assertEq(token1.balanceOf(address(uniswapV3Pool)), uint256(int256(poolBalance1) + amount1Delta));
+
+        (uint160 sqrtPriceX96, int24 tick) = uniswapV3Pool.slot0();
+
+        assertEq(sqrtPriceX96, 5604469350942327889444743441197);
+        assertEq(tick, 85184);
+    }
+
+    function uniswapV3SwapCallback(int256 amount0, int256 amount1, bytes calldata data) public {
+        if (amount0 > 0) {
+            token0.transfer(msg.sender, uint256(amount0));
+        }
+
+        if (amount1 > 0) {
+            token1.transfer(msg.sender, uint256(amount1));
         }
     }
 
-    function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) public {
-        if (shouldTransferInCallback) {
-            IERC20(token0).transfer(msg.sender, amount0);
-            IERC20(token1).transfer(msg.sender, amount1);
-        }
-    }
+    
 }
