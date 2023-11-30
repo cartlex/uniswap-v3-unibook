@@ -26,7 +26,7 @@ contract UniswapV3Pool {
         address token0;
         address token1;
         address payer;
-    }   
+    }
 
     struct Slot0 {
         uint160 sqrtPriceX96;
@@ -69,7 +69,7 @@ contract UniswapV3Pool {
 
         _position.update(amount);
 
-        uint256 amount0 = 0.998976618347425280 ether;
+        uint256 amount0 = 0.99897661834742528 ether;
         uint256 amount1 = 5000 ether;
 
         liquidity = liquidity + amount;
@@ -80,15 +80,11 @@ contract UniswapV3Pool {
         if (amount0 > 0) balance0Before = balance0();
         if (amount1 > 0) balance1Before = balance1();
 
-        IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
-            amount0,
-            amount1,
-            data
-        );
+        IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(amount0, amount1, data);
 
         if (amount0 > 0 && balance0Before + amount0 > balance0()) revert ErrorsLib.InsufficientInputAmount();
         if (amount1 > 0 && balance1Before + amount1 > balance1()) revert ErrorsLib.InsufficientInputAmount();
-        
+
         emit EventsLib.Mint(msg.sender, owner, lowerTick, upperTick, amount, amount0, amount1);
 
         return (amount0, amount1);
@@ -109,15 +105,7 @@ contract UniswapV3Pool {
 
         if (balance1Before + uint256(amount1) > balance1()) revert ErrorsLib.InsufficientInputAmount();
 
-        emit EventsLib.Swap(
-            msg.sender,
-            recipient,
-            amount0,
-            amount1,
-            slot0.sqrtPriceX96,
-            liquidity,
-            slot0.tick
-        );
+        emit EventsLib.Swap(msg.sender, recipient, amount0, amount1, slot0.sqrtPriceX96, liquidity, slot0.tick);
 
         return (amount0, amount1);
     }

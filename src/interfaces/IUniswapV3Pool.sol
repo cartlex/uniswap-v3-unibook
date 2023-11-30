@@ -9,6 +9,6 @@ interface IUniswapV3Pool {
     }
 
     function mint(address owner, int24 lowerTick, int24 upperTick, uint128 amount, bytes calldata data) external;
-    
+
     function swap(address recipient, bytes calldata data) external returns (int256, int256);
 }

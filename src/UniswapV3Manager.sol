@@ -5,21 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUniswapV3Pool} from "./interfaces/IUniswapV3Pool.sol";
 
 contract UniswapV3Manager {
-
-    function mint(
-        address poolAddress,
-        int24 lowerTick,
-        int24 upperTick,
-        uint128 liquidity,
-        bytes calldata data
-    ) public {
-        IUniswapV3Pool(poolAddress).mint(
-            msg.sender,
-            lowerTick,
-            upperTick,
-            liquidity,
-            data
-        );
+    function mint(address poolAddress, int24 lowerTick, int24 upperTick, uint128 liquidity, bytes calldata data)
+        public
+    {
+        IUniswapV3Pool(poolAddress).mint(msg.sender, lowerTick, upperTick, liquidity, data);
     }
 
     function swap(address poolAddress, bytes calldata data) public {

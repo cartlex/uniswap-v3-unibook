@@ -34,7 +34,7 @@ contract UniswapV3PoolTest is Test {
     function setupTestCase(TestCaseParams memory params) internal returns (uint256, uint256) {
         token0.mint(address(this), params.wethBalance);
         token1.mint(address(this), params.daiBalance);
-        
+
         uniswapV3Pool = new UniswapV3Pool(
             address(token0),
             address(token1),
@@ -48,14 +48,12 @@ contract UniswapV3PoolTest is Test {
             IERC20(token0).approve(address(this), params.wethBalance);
             IERC20(token1).approve(address(this), params.daiBalance);
 
-            UniswapV3Pool.CallbackData memory extra = UniswapV3Pool.CallbackData({
-                token0: address(token0),
-                token1: address(token1),
-                payer: address(this)
-            });
+            UniswapV3Pool.CallbackData memory extra =
+                UniswapV3Pool.CallbackData({token0: address(token0), token1: address(token1), payer: address(this)});
 
-            (uint256 poolBalance0, uint256 poolBalance1) =
-                uniswapV3Pool.mint(address(this), params.lowerTick, params.upperTick, params.liquidity, abi.encode(extra));
+            (uint256 poolBalance0, uint256 poolBalance1) = uniswapV3Pool.mint(
+                address(this), params.lowerTick, params.upperTick, params.liquidity, abi.encode(extra)
+            );
 
             return (poolBalance0, poolBalance1);
         }
@@ -76,7 +74,7 @@ contract UniswapV3PoolTest is Test {
 
         (uint256 poolBalance0, uint256 poolBalance1) = setupTestCase(params);
 
-        uint256 expectedAmount0 = 0.998976618347425280 ether;
+        uint256 expectedAmount0 = 0.99897661834742528 ether;
         uint256 expectedAmount1 = 5000 ether;
 
         assertEq(poolBalance0, expectedAmount0);
@@ -123,7 +121,7 @@ contract UniswapV3PoolTest is Test {
 
         token0.mint(address(this), params.wethBalance);
         token1.mint(address(this), params.daiBalance);
-        
+
         uniswapV3Pool = new UniswapV3Pool(
             address(token0),
             address(token1),
@@ -154,7 +152,7 @@ contract UniswapV3PoolTest is Test {
 
         token0.mint(address(this), params.wethBalance);
         token1.mint(address(this), params.daiBalance);
-        
+
         uniswapV3Pool = new UniswapV3Pool(
             address(token0),
             address(token1),
@@ -185,7 +183,7 @@ contract UniswapV3PoolTest is Test {
 
         token0.mint(address(this), params.wethBalance);
         token1.mint(address(this), params.daiBalance);
-        
+
         uniswapV3Pool = new UniswapV3Pool(
             address(token0),
             address(token1),
@@ -223,12 +221,9 @@ contract UniswapV3PoolTest is Test {
 
         IERC20(token0).approve(address(this), params.wethBalance);
         IERC20(token1).approve(address(this), params.daiBalance);
-            
-        UniswapV3Pool.CallbackData memory extra = UniswapV3Pool.CallbackData({
-            token0: address(token0),
-            token1: address(token1),
-            payer: address(this)
-        });
+
+        UniswapV3Pool.CallbackData memory extra =
+            UniswapV3Pool.CallbackData({token0: address(token0), token1: address(token1), payer: address(this)});
 
         shouldTransferInCallback = params.shouldTransferInCallback;
 
@@ -257,11 +252,8 @@ contract UniswapV3PoolTest is Test {
         token1.mint(address(this), swapAmount);
         IERC20(token1).approve(address(this), swapAmount);
 
-        UniswapV3Pool.CallbackData memory extra = UniswapV3Pool.CallbackData({
-            token0: address(token0),
-            token1: address(token1),
-            payer: address(this)
-        });
+        UniswapV3Pool.CallbackData memory extra =
+            UniswapV3Pool.CallbackData({token0: address(token0), token1: address(token1), payer: address(this)});
 
         int256 userBalance0Before = int256(token0.balanceOf(address(this)));
 
@@ -304,12 +296,9 @@ contract UniswapV3PoolTest is Test {
 
         IERC20(token0).approve(address(this), params.wethBalance);
         IERC20(token1).approve(address(this), params.daiBalance);
-            
-        UniswapV3Pool.CallbackData memory extra = UniswapV3Pool.CallbackData({
-            token0: address(token0),
-            token1: address(token1),
-            payer: address(this)
-        });
+
+        UniswapV3Pool.CallbackData memory extra =
+            UniswapV3Pool.CallbackData({token0: address(token0), token1: address(token1), payer: address(this)});
 
         vm.expectRevert(ErrorsLib.InsufficientInputAmount.selector);
         (int256 amount0Delta, int256 amount1Delta) = uniswapV3Pool.swap(address(this), abi.encode(extra));
