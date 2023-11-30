@@ -3,7 +3,6 @@ pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUniswapV3Pool} from "./interfaces/IUniswapV3Pool.sol";
-import {UniswapV3Pool} from "./UniswapV3Pool.sol";
 
 contract UniswapV3Manager {
 
@@ -14,7 +13,7 @@ contract UniswapV3Manager {
         uint128 liquidity,
         bytes calldata data
     ) public {
-        UniswapV3Pool(poolAddress).mint(
+        IUniswapV3Pool(poolAddress).mint(
             msg.sender,
             lowerTick,
             upperTick,
@@ -24,7 +23,7 @@ contract UniswapV3Manager {
     }
 
     function swap(address poolAddress, bytes calldata data) public {
-        UniswapV3Pool(poolAddress).swap(msg.sender, data);
+        IUniswapV3Pool(poolAddress).swap(msg.sender, data);
     }
 
     function uniswapV3MintCallback(uint256 amount0, uint256 amount1, bytes calldata data) external {
