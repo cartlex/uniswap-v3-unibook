@@ -5,4 +5,5 @@ library ErrorsLib {
     error InvalidTickRange();
     error ZeroLiquidity();
     error InsufficientInputAmount();
+    error TickNotSpaced();
 }

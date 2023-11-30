@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IUniswapV3MintCallback} from "./interfaces/IUniswapV3MintCallback.sol";
 import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {Tick} from "./libraries/Tick.sol";
+import {TickBitmap} from "./libraries/TickBitmap.sol";
 import {Position} from "./libraries/Position.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
@@ -13,6 +14,7 @@ contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
+    using TickBitmap for mapping(int16 => int256);
 
     int24 private constant MIN_TICK = -887272;
     int24 private constant MAX_TICK = -MIN_TICK;
@@ -37,6 +39,7 @@ contract UniswapV3Pool {
 
     mapping(int24 => Tick.Info) public ticks;
     mapping(bytes32 => Position.Info) public positions;
+    mapping(int16 => uint256) public tickBitmpap;
 
     constructor(address token0_, address token1_, uint160 sqrtPriceX96, int24 tick) {
         token0 = token0_;
@@ -62,9 +65,9 @@ contract UniswapV3Pool {
         ticks.update(lowerTick, amount);
         ticks.update(upperTick, amount);
 
-        Position.Info storage position = positions.get(owner, lowerTick, upperTick);
+        Position.Info storage _position = positions.get(owner, lowerTick, upperTick);
 
-        position.update(amount);
+        _position.update(amount);
 
         uint256 amount0 = 0.998976618347425280 ether;
         uint256 amount1 = 5000 ether;

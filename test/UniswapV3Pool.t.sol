@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {console2, Test} from "forge-std/Test.sol";
-import {Token} from "./Mock/Token.sol";
+import {Token} from "./mock/Token.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {UniswapV3Pool} from "../src/UniswapV3Pool.sol";
 import {ErrorsLib} from "../src/libraries/ErrorsLib.sol";
