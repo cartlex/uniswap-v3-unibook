@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
 library ErrorsLib {
@@ -6,4 +6,6 @@ library ErrorsLib {
     error ZeroLiquidity();
     error InsufficientInputAmount();
     error TickNotSpaced();
+    error InvalidSqrtPriceX96();
+    error ResultOverflow();
 }

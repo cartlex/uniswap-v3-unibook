@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -7,6 +7,8 @@ import {IUniswapV3SwapCallback} from "./interfaces/IUniswapV3SwapCallback.sol";
 import {Tick} from "./libraries/Tick.sol";
 import {TickBitmap} from "./libraries/TickBitmap.sol";
 import {Position} from "./libraries/Position.sol";
+import {TickMath} from "./libraries/TickMath.sol";
+import {Math} from "./libraries/Math.sol";
 import {ErrorsLib} from "./libraries/ErrorsLib.sol";
 import {EventsLib} from "./libraries/EventsLib.sol";
 
@@ -14,7 +16,7 @@ contract UniswapV3Pool {
     using Tick for mapping(int24 => Tick.Info);
     using Position for mapping(bytes32 => Position.Info);
     using Position for Position.Info;
-    using TickBitmap for mapping(int16 => int256);
+    using TickBitmap for mapping(int16 => uint256);
 
     int24 private constant MIN_TICK = -887272;
     int24 private constant MAX_TICK = -MIN_TICK;
@@ -39,7 +41,7 @@ contract UniswapV3Pool {
 
     mapping(int24 => Tick.Info) public ticks;
     mapping(bytes32 => Position.Info) public positions;
-    mapping(int16 => uint256) public tickBitmpap;
+    mapping(int16 => uint256) public tickBitmap;
 
     constructor(address token0_, address token1_, uint160 sqrtPriceX96, int24 tick) {
         token0 = token0_;
@@ -62,15 +64,34 @@ contract UniswapV3Pool {
 
         if (amount == 0) revert ErrorsLib.ZeroLiquidity();
 
-        ticks.update(lowerTick, amount);
-        ticks.update(upperTick, amount);
+        bool flippedLower = ticks.update(lowerTick, amount);
+        bool flippedUpper = ticks.update(upperTick, amount);
+
+        if (flippedLower) {
+            tickBitmap.flipTick(lowerTick, 1);
+        }
+
+        if (flippedUpper) {
+            tickBitmap.flipTick(upperTick, 1);
+        }
 
         Position.Info storage _position = positions.get(owner, lowerTick, upperTick);
 
         _position.update(amount);
 
-        uint256 amount0 = 0.99897661834742528 ether;
-        uint256 amount1 = 5000 ether;
+        Slot0 memory slot0_ = slot0;
+
+        uint256 amount0 = Math.calcAmount0Delta(
+            slot0_.sqrtPriceX96,
+            TickMath.getSqrtRatioAtTick(upperTick),
+            amount
+        );
+
+        uint256 amount1 = Math.calcAmount1Delta(
+            slot0_.sqrtPriceX96,
+            TickMath.getSqrtRatioAtTick(lowerTick),
+            amount
+        );
 
         liquidity = liquidity + amount;
 
