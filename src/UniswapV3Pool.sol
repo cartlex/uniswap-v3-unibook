@@ -20,6 +20,12 @@ contract UniswapV3Pool {
     address public immutable token0;
     address public immutable token1;
 
+    struct CallbackData {
+        address token0;
+        address token1;
+        address payer;
+    }   
+
     struct Slot0 {
         uint160 sqrtPriceX96;
         int24 tick;
@@ -45,7 +51,7 @@ contract UniswapV3Pool {
      * @param upperTick Upper bound of the price range in which owner provide liquidity
      * @param amount Amount of liquidity to provide
      */
-    function mint(address owner, int24 lowerTick, int24 upperTick, uint128 amount)
+    function mint(address owner, int24 lowerTick, int24 upperTick, uint128 amount, bytes calldata data)
         external
         returns (uint256, uint256)
     {
@@ -74,7 +80,7 @@ contract UniswapV3Pool {
         IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
             amount0,
             amount1,
-            ""
+            data
         );
 
         if (amount0 > 0 && balance0Before + amount0 > balance0()) revert ErrorsLib.InsufficientInputAmount();
@@ -85,7 +91,7 @@ contract UniswapV3Pool {
         return (amount0, amount1);
     }
 
-    function swap(address recipient) public returns (int256, int256) {
+    function swap(address recipient, bytes calldata data) public returns (int256, int256) {
         int24 nextTick = 85184;
         uint160 nextPrice = 5604469350942327889444743441197;
 
@@ -96,7 +102,7 @@ contract UniswapV3Pool {
         IERC20(token0).transfer(recipient, uint256(-amount0));
 
         uint256 balance1Before = balance1();
-        IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, "");
+        IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(amount0, amount1, data);
 
         if (balance1Before + uint256(amount1) > balance1()) revert ErrorsLib.InsufficientInputAmount();
 
